@@ -63,7 +63,6 @@ partial class MainForm
     // ---- 状态栏 ----
     private SciProgressBar _progress = null!;
     private Label _statusText = null!;
-    private Label _lblStatusRight = null!;
     // ---- 底部代理控件 ----
     private Label _lblProxyLabel = null!;
     private TextBox _txtProxyPort = null!;
@@ -99,7 +98,6 @@ partial class MainForm
         _btnClearLog = new SciButton();
         _progress = new SciProgressBar();
         _statusText = new Label();
-        _lblStatusRight = new Label();
         _lblProxyLabel = new Label();
         _txtProxyPort = new TextBox();
         _btnProxyToggle = new SciButton();
@@ -126,22 +124,22 @@ partial class MainForm
         _lblSub.AutoSize = true;
         _lblSub.Font = new Font("Microsoft YaHei UI", 9F);
         _lblSub.ForeColor = Color.FromArgb(139, 148, 161);
-        _lblSub.Location = new Point(100, 15);
+        _lblSub.Location = new Point(136, 18);
         _lblSub.Name = "_lblSub";
-        _lblSub.Size = new Size(271, 17);
+        _lblSub.Size = new Size(98, 17);
         _lblSub.TabIndex = 1;
-        _lblSub.Text = "Git 桌面客户端 · 选择目录 → 填备注 → 提交推送";
+        _lblSub.Text = "更方便的Git GUI";
         // 
         // _lblVersion
         // 
         _lblVersion.AutoSize = true;
         _lblVersion.Font = new Font("Microsoft YaHei UI", 8.5F);
         _lblVersion.ForeColor = Color.FromArgb(139, 148, 161);
-        _lblVersion.Location = new Point(412, 15);
+        _lblVersion.Location = new Point(712, 18);
         _lblVersion.Name = "_lblVersion";
-        _lblVersion.Size = new Size(78, 17);
+        _lblVersion.Size = new Size(122, 17);
         _lblVersion.TabIndex = 2;
-        _lblVersion.Text = "v1.3 · 简洁版";
+        _lblVersion.Text = "VERSION 20260803";
         // 
         // _panelGlobal
         // 
@@ -246,7 +244,6 @@ partial class MainForm
         _statusLabel.Size = new Size(170, 16);
         _statusLabel.TabIndex = 3;
         _statusLabel.Text = "○ 尚未选择文件夹";
-        _statusLabel.Click += _statusLabel_Click;
         // 
         // _guidance
         // 
@@ -290,8 +287,8 @@ partial class MainForm
         _remoteList.TabIndex = 0;
         _remoteList.UseCompatibleStateImageBehavior = false;
         _remoteList.View = View.Details;
-        _remoteList.Columns.Add("名称", 150);
-        _remoteList.Columns.Add("URL", 450);
+        _remoteList.Columns.Add("名称", 120);
+        _remoteList.Columns.Add("URL", 500);
         // 
         // _btnAddRemote
         // 
@@ -444,7 +441,7 @@ partial class MainForm
         _progress.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
         _progress.Location = new Point(10, 737);
         _progress.Name = "_progress";
-        _progress.Size = new Size(160, 5);
+        _progress.Size = new Size(80, 5);
         _progress.TabIndex = 8;
         // 
         // _statusText
@@ -459,24 +456,13 @@ partial class MainForm
         _statusText.TabIndex = 9;
         _statusText.Text = "就绪";
         // 
-        // _lblStatusRight
-        // 
-        _lblStatusRight.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-        _lblStatusRight.Font = new Font("Microsoft YaHei UI", 8.5F);
-        _lblStatusRight.ForeColor = Color.FromArgb(139, 148, 161);
-        _lblStatusRight.Location = new Point(728, 733);
-        _lblStatusRight.Name = "_lblStatusRight";
-        _lblStatusRight.Size = new Size(100, 15);
-        _lblStatusRight.TabIndex = 10;
-        _lblStatusRight.Text = "GITLUME v1.3";
-        // 
         // _lblProxyLabel
         // 
-        _lblProxyLabel.Anchor = AnchorStyles.Bottom;
+        _lblProxyLabel.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
         _lblProxyLabel.AutoSize = true;
         _lblProxyLabel.Font = new Font("Microsoft YaHei UI", 9F);
         _lblProxyLabel.ForeColor = Color.FromArgb(139, 148, 161);
-        _lblProxyLabel.Location = new Point(333, 733);
+        _lblProxyLabel.Location = new Point(630, 733);
         _lblProxyLabel.Name = "_lblProxyLabel";
         _lblProxyLabel.Size = new Size(56, 17);
         _lblProxyLabel.TabIndex = 11;
@@ -484,12 +470,12 @@ partial class MainForm
         // 
         // _txtProxyPort
         // 
-        _txtProxyPort.Anchor = AnchorStyles.Bottom;
+        _txtProxyPort.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
         _txtProxyPort.BackColor = Color.FromArgb(12, 15, 19);
         _txtProxyPort.BorderStyle = BorderStyle.FixedSingle;
         _txtProxyPort.Font = new Font("Microsoft YaHei UI", 9F);
         _txtProxyPort.ForeColor = Color.FromArgb(230, 237, 243);
-        _txtProxyPort.Location = new Point(395, 729);
+        _txtProxyPort.Location = new Point(690, 729);
         _txtProxyPort.Name = "_txtProxyPort";
         _txtProxyPort.Size = new Size(72, 23);
         _txtProxyPort.TabIndex = 12;
@@ -498,13 +484,13 @@ partial class MainForm
         // 
         // _btnProxyToggle
         // 
-        _btnProxyToggle.Anchor = AnchorStyles.Bottom;
         _btnProxyToggle.Accent = false;
+        _btnProxyToggle.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
         _btnProxyToggle.Danger = false;
         _btnProxyToggle.FlatStyle = FlatStyle.Flat;
         _btnProxyToggle.Font = new Font("Microsoft YaHei UI", 9F);
         _btnProxyToggle.ForeColor = Color.FromArgb(230, 237, 243);
-        _btnProxyToggle.Location = new Point(477, 724);
+        _btnProxyToggle.Location = new Point(770, 724);
         _btnProxyToggle.Name = "_btnProxyToggle";
         _btnProxyToggle.Size = new Size(64, 30);
         _btnProxyToggle.TabIndex = 13;
@@ -524,7 +510,6 @@ partial class MainForm
         Controls.Add(_panelConsole);
         Controls.Add(_progress);
         Controls.Add(_statusText);
-        Controls.Add(_lblStatusRight);
         Controls.Add(_lblProxyLabel);
         Controls.Add(_txtProxyPort);
         Controls.Add(_btnProxyToggle);

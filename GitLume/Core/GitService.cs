@@ -395,8 +395,23 @@ public sealed class GitService
             }
 
             Error($"推送到 {remote.Name} 失败：\n{result.Output.Trim()}");
+            if (IsNetworkError(result.Output))
+                Warn("提示：网络连接失败，请在软件底部开启「代理端口」后再试。");
             return false;
         }
+    }
+
+    private static bool IsNetworkError(string output)
+    {
+        if (string.IsNullOrEmpty(output)) return false;
+        string[] markers =
+        {
+            "Connection was reset", "Couldn't connect to server",
+            "Failed to connect", "Could not resolve host",
+            "Connection refused", "Network is unreachable",
+            "Connection timed out", "Recv failure",
+        };
+        return markers.Any(m => output.IndexOf(m, StringComparison.OrdinalIgnoreCase) >= 0);
     }
 
     // ==================== 高层业务操作 ====================

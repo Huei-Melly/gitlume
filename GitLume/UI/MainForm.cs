@@ -97,9 +97,12 @@ public partial class MainForm : Form
         {
             bool isOn = _btnProxyToggle.Text == "开启";
             _btnProxyToggle.Text = isOn ? "关闭" : "开启";
-            _btnProxyToggle.Accent = !isOn;
+            _btnProxyToggle.Accent = false;
+            _btnProxyToggle.Danger = !isOn;
             _btnProxyToggle.Invalidate();
+            UpdateProxyAppearance();
             ApplyProxyConfig();
+            LogProxyStatus();
             _saveDebounce.Stop();
             _saveDebounce.Start();
         };
@@ -198,10 +201,14 @@ public partial class MainForm : Form
         _txtProxyPort.Text = _settings.ProxyPort.ToString();
         bool proxyOn = _settings.ProxyEnabled;
         _btnProxyToggle.Text = proxyOn ? "开启" : "关闭";
-        _btnProxyToggle.Accent = proxyOn;
+        _btnProxyToggle.Accent = false;
+        _btnProxyToggle.Danger = proxyOn;
+        _btnProxyToggle.Invalidate();
+        UpdateProxyAppearance();
         RefreshRemoteList(_settings.Remotes);
         SetStatusChip(RepoStatus.Unknown);
         ApplyProxyConfig();
+        LogProxyStatus();
 
         // 如果 config.json 中邮箱为空，从 git 全局配置读取并自动填充
         if (string.IsNullOrWhiteSpace(_settings.UserEmail))
@@ -670,14 +677,50 @@ public partial class MainForm : Form
         }
     }
 
+    /// <summary>代理开启时全红醒目样式，关闭时恢复默认。</summary>
+    private void UpdateProxyAppearance()
+    {
+        bool proxyOn = _btnProxyToggle.Text == "开启";
+        if (proxyOn)
+        {
+            _lblProxyLabel.ForeColor = Theme.Danger;
+            _txtProxyPort.BackColor = Color.FromArgb(50, 18, 20);
+            _txtProxyPort.ForeColor = Theme.Danger;
+        }
+        else
+        {
+            _lblProxyLabel.ForeColor = Color.FromArgb(139, 148, 161);
+            _txtProxyPort.BackColor = Color.FromArgb(12, 15, 19);
+            _txtProxyPort.ForeColor = Color.FromArgb(230, 237, 243);
+        }
+    }
+
+    /// <summary>在日志中用红色醒目提示当前代理端口状态。</summary>
+    private void LogProxyStatus()
+    {
+        bool proxyOn = _btnProxyToggle.Text == "开启";
+        var port = _txtProxyPort.Text.Trim();
+        SafeUi(() =>
+        {
+            _console.SelectionStart = _console.TextLength;
+            _console.SelectionLength = 0;
+            _console.SelectionColor = proxyOn ? Theme.Danger : Color.FromArgb(139, 148, 161);
+            _console.SelectionFont = _logLabelFont;
+            var msg = proxyOn ? $"🔴 代理端口已开启（127.0.0.1:{port}）" : $"代理端口已关闭（127.0.0.1:{port}）";
+            _console.AppendText(msg + "\n");
+            _logLines++;
+            _console.ScrollToCaret();
+        });
+    }
+
     private void OnFormClosing(object? sender, FormClosingEventArgs e)
     {
         _progress.StopFlow();   // 停止进度条动画计时器，避免退出后仍在空转
         _service.Shutdown();    // 终止可能仍在执行的 git 进程，不留孤儿进程
         _service.ClearCredentials();
         _saveDebounce.Stop();   // 停止防抖，直接写盘
-        // 直接保存内存中的设置，避免读取已释放的控件
-        ConfigStore.Save(_settings);
+        _saveDebounce.Dispose();// 释放防抖计时器资源
+        SaveSettings();         // 从 UI 控件读取最新值（代理、远程列表等）完整保存
     }
 
     // ---------- 背景 ----------
@@ -689,10 +732,5 @@ public partial class MainForm : Form
 
         using var pen = new Pen(Theme.Border, 1f);
         g.DrawLine(pen, 0, 50, Width, 50);
-    }
-
-    private void _statusLabel_Click(object sender, EventArgs e)
-    {
-
     }
 }
