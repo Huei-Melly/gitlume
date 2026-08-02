@@ -448,15 +448,19 @@ public sealed class GitService
 
         var branch = await GetBranchAsync(folder);
 
-        // 推送前自动拉取云端最新内容：
-        // 首次提交合并云端历史；之后增量提交也先拉取，避免推送被拒，全程无需手动操作
-        StatusChanged?.Invoke(isFirstCommit ? "首次提交模式：合并云端历史..." : "自动拉取云端最新内容...");
-        var pull = await PullWithAuthAsync(folder, remotes[0], branch, autoResolveConflicts: isFirstCommit);
-        if (pull == PullOutcome.Failed) return false;
-
         var allOk = true;
         foreach (var remote in remotes)
         {
+            // 每个远程推送前先拉取该远程的最新内容，确保不会因远程有不同提交而被拒绝
+            StatusChanged?.Invoke($"正在从 {remote.Name} 拉取最新内容...");
+            var pull = await PullWithAuthAsync(folder, remote, branch, autoResolveConflicts: isFirstCommit);
+            if (pull == PullOutcome.Failed)
+            {
+                allOk = false;
+                Warn($"从 {remote.Name} 拉取失败，跳过该仓库的推送。");
+                continue;
+            }
+
             if (!await PushWithAuthAsync(folder, remote, branch, setUpstream: isFirstCommit))
             {
                 allOk = false;
