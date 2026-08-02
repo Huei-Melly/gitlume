@@ -209,22 +209,6 @@ public partial class MainForm : Form
         RefreshRemoteList(_settings.Remotes);
         SetStatusChip(RepoStatus.Unknown);
         ApplyProxyConfig();
-
-        // 如果 config.json 中邮箱为空，从 git 全局配置读取并自动填充
-        if (string.IsNullOrWhiteSpace(_settings.UserEmail))
-            _ = LoadGlobalEmailAsync();
-    }
-
-    private async Task LoadGlobalEmailAsync()
-    {
-        var email = await _service.GetGlobalConfigAsync("user.email");
-        if (!string.IsNullOrEmpty(email) && string.IsNullOrWhiteSpace(_txtEmail.Text))
-        {
-            _txtEmail.Text = email;
-            _settings.UserEmail = email;
-            _saveDebounce.Stop();
-            _saveDebounce.Start();
-        }
     }
 
     private void SaveSettings()

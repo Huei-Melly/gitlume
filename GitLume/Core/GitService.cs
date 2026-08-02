@@ -191,14 +191,6 @@ public sealed class GitService
         return new GitResult { ExitCode = 1, Output = r1.Output + r2.Output };
     }
 
-    /// <summary>读取全局 Git 配置值（如 user.name / user.email）。</summary>
-    public async Task<string?> GetGlobalConfigAsync(string key)
-    {
-        var r = await RunAsync("", false, "config", "--global", key);
-        var val = r.Output?.Trim();
-        return r.Success && !string.IsNullOrEmpty(val) ? val : null;
-    }
-
     // ==================== 分支与远程 ====================
 
     /// <summary>获取当前分支名（新仓库无提交时回退 master）。</summary>
