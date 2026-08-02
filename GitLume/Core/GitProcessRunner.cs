@@ -121,8 +121,23 @@ public sealed class GitProcessRunner
         {
             if (e.Data == null) return;
             stderr.AppendLine(e.Data);
-            OutputReceived?.Invoke(new GitOutputLine { Kind = OutputKind.Error, Text = e.Data });
+            var data = e.Data;
+            // Git 把推送/拉取的进度信息也输出到 stderr（如 "From "、"To "、"remote:"、
+            // " * branch"、"Already up to date" 等），这些不是错误，不应显示为红色。
+            // 只有真正的错误（fatal:/error: 等）才标记为 Error。
+            var kind = IsActualError(data) ? OutputKind.Error : OutputKind.Info;
+            OutputReceived?.Invoke(new GitOutputLine { Kind = kind, Text = data });
         };
+
+        static bool IsActualError(string line)
+        {
+            if (string.IsNullOrEmpty(line)) return false;
+            if (line.Contains("fatal:", StringComparison.OrdinalIgnoreCase)) return true;
+            if (line.Contains("error:", StringComparison.OrdinalIgnoreCase)) return true;
+            if (line.StartsWith("warning:", StringComparison.OrdinalIgnoreCase)) return true;
+            if (line.StartsWith("hint:", StringComparison.OrdinalIgnoreCase)) return true;
+            return false;
+        }
 
         try
         {
