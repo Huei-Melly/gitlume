@@ -419,8 +419,8 @@ public sealed class GitService
     private async Task<GitResult> StageAndCommitAsync(string folder, string message)
     {
         StatusChanged?.Invoke("暂存所有更改...");
-        LogCommand("git add .");
-        var add = await RunAsync(folder, true, "add", ".");
+        LogCommand("git add -A");
+        var add = await RunAsync(folder, true, "add", "-A");
         if (!add.Success)
         {
             Error($"git add 失败：{add.Output.Trim()}");

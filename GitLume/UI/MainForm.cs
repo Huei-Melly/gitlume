@@ -43,7 +43,8 @@ public partial class MainForm : Form
         LoadSettingsToUi();
         LoadSavedCredentials();
         // 启动时若已填过用户名/邮箱，自动补写一次全局 git 配置（替代原「保存」按钮）
-        _ = AutoSaveGlobalConfigAsync();
+        // 在所有初始化操作完成后，最后再记录代理端口状态
+        _ = AutoSaveAndLogProxyStatusAsync();
     }
 
     /// <summary>列表宽度 = 按钮左缘 - 32px，确保任何窗口宽度下列表和按钮都不重叠。</summary>
@@ -208,7 +209,6 @@ public partial class MainForm : Form
         RefreshRemoteList(_settings.Remotes);
         SetStatusChip(RepoStatus.Unknown);
         ApplyProxyConfig();
-        LogProxyStatus();
 
         // 如果 config.json 中邮箱为空，从 git 全局配置读取并自动填充
         if (string.IsNullOrWhiteSpace(_settings.UserEmail))
@@ -267,6 +267,13 @@ public partial class MainForm : Form
         {
             // 后台写入全局配置失败时忽略，不影响主流程
         }
+    }
+
+    /// <summary>启动时自动保存全局配置，完成后在日志最末尾记录代理端口状态。</summary>
+    private async Task AutoSaveAndLogProxyStatusAsync()
+    {
+        await AutoSaveGlobalConfigAsync();
+        LogProxyStatus();
     }
 
     // ---------- 本地仓库 ----------
