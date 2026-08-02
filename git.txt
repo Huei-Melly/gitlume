@@ -1,0 +1,33 @@
+# 1 进入项目目录（你自己更换路径）
+
+# 2 设置账号【电脑全局只需设置一次！以后所有项目不用再输】
+git config --global user.name "HueiMelly"
+git config --global user.email "17391784+hueimelly@user.noreply.gitee.com"
+
+# 3 初始化仓库【仅第一次运行！！】
+git init
+
+# 4 添加所有文件进入暂存
+git add .
+
+# 5 本地保存快照，备注项目信息
+git commit -m "备注"
+
+# 6 绑定你的gitee仓库地址（替换成自己仓库url）
+git remote add origin https://gitee.com/hueimelly/xxx.git
+
+
+# 7 推送到云端
+git pull origin master --allow-unrelated-histories
+:wq
+git push -u origin master
+
+# 8 gitee用户名密码
+HueiMelly
+Zj1131220423.14
+
+# 更新
+git add .
+git commit -m "备注"
+git push
+

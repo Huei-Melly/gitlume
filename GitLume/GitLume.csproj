@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- net8.0-windows：LTS 长期支持版，VS2022（17.8+）可直接打开；
+         RollForward=LatestMajor 保证在更高版本 .NET 运行时（如 9.0/10.0）上也能运行。 -->
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RollForward>LatestMajor</RollForward>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>
