@@ -631,4 +631,9 @@ public partial class MainForm : Form
         using var pen = new Pen(Theme.Border, 1f);
         g.DrawLine(pen, 0, 50, Width, 50);
     }
+
+    private void _statusLabel_Click(object sender, EventArgs e)
+    {
+
+    }
 }

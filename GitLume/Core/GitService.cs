@@ -274,14 +274,20 @@ public sealed class GitService
 
     // ==================== 拉取 / 推送（带认证重试） ====================
 
-    private async Task<PullOutcome> PullWithAuthAsync(string folder, RemoteInfo remote, string branch)
+    private async Task<PullOutcome> PullWithAuthAsync(string folder, RemoteInfo remote, string branch, bool autoResolveConflicts = false)
     {
         var authTried = false;
         CredentialEntry? entered = null;
         while (true)
         {
+            // 首次提交时加 -X theirs 自动解决冲突（如远程已有 README 与本地不同），
+            // 用远程版本覆盖本地冲突文件，避免手动解决合并冲突
+            var pullArgs = autoResolveConflicts
+                ? new[] { "pull", "-X", "theirs", remote.Name, branch, "--allow-unrelated-histories" }
+                : new[] { "pull", remote.Name, branch, "--allow-unrelated-histories" };
+
             var result = await RunInCredentialScopeAsync(folder, remote,
-                () => RunAsync(folder, false, "pull", remote.Name, branch, "--allow-unrelated-histories"));
+                () => RunAsync(folder, false, pullArgs));
 
             if (result.Success)
             {
@@ -318,7 +324,21 @@ public sealed class GitService
                 return PullOutcome.Failed;
             }
 
-            Error($"拉取失败（可能存在冲突，请先解决冲突）：\n{result.Output.Trim()}");
+            if (result.Output.Contains("CONFLICT", StringComparison.OrdinalIgnoreCase)
+                || result.Output.Contains("merge conflict", StringComparison.OrdinalIgnoreCase))
+            {
+                if (autoResolveConflicts)
+                {
+                    Error($"自动合并冲突失败（已尝试用远程版本覆盖，仍有冲突）：\n{result.Output.Trim()}");
+                }
+                else
+                {
+                    Error($"拉取失败（存在冲突，请先在本地手动解决冲突后再提交推送）：\n{result.Output.Trim()}");
+                }
+                return PullOutcome.Failed;
+            }
+
+            Error($"拉取失败：\n{result.Output.Trim()}");
             return PullOutcome.Failed;
         }
     }
@@ -417,7 +437,7 @@ public sealed class GitService
         // 推送前自动拉取云端最新内容：
         // 首次提交合并云端历史；之后增量提交也先拉取，避免推送被拒，全程无需手动操作
         StatusChanged?.Invoke(isFirstCommit ? "首次提交模式：合并云端历史..." : "自动拉取云端最新内容...");
-        var pull = await PullWithAuthAsync(folder, remotes[0], branch);
+        var pull = await PullWithAuthAsync(folder, remotes[0], branch, autoResolveConflicts: isFirstCommit);
         if (pull == PullOutcome.Failed) return false;
 
         foreach (var remote in remotes)
