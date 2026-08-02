@@ -44,7 +44,8 @@ public partial class MainForm : Form
     private void UpdateRemoteListWidth()
     {
         _remoteList.Width = _btnAddRemote.Left - 32;
-        _remoteList.Columns[1].Width = Math.Max(200, _remoteList.Width - _remoteList.Columns[0].Width - 4);
+        if (_remoteList.Columns.Count >= 2)
+            _remoteList.Columns[1].Width = Math.Max(200, _remoteList.Width - _remoteList.Columns[0].Width - 4);
     }
 
     /// <summary>备注输入框宽度 = 「提交并推送」左缘 - 24px，任何窗口宽度下都不与按钮重叠。</summary>
@@ -70,7 +71,7 @@ public partial class MainForm : Form
         _btnDeleteRemote.Click += OnDeleteRemote;
         _btnLoadRemotes.Click += async (_, _) => await OnLoadRemotes();
         _btnSmartPush.Click += async (_, _) => await OnSmartPush();
-        _btnClearLog.Click += (_, _) => { _console.Clear(); _logLines = 0; };
+        _btnClearLog.Click += (_, _) => { _console.Clear(); _console.ScrollToCaret(); _logLines = 0; };
         _remoteList.DoubleClick += (_, _) => OnEditRemote(null, EventArgs.Empty);
 
         // 窗口缩放时同步校准列表宽度与备注输入框宽度

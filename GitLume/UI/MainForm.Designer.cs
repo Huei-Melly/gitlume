@@ -283,6 +283,8 @@ partial class MainForm
         _remoteList.TabIndex = 0;
         _remoteList.UseCompatibleStateImageBehavior = false;
         _remoteList.View = View.Details;
+        _remoteList.Columns.Add("名称", 150);
+        _remoteList.Columns.Add("URL", 450);
         // 
         // _btnAddRemote
         // 
