@@ -47,6 +47,12 @@ public sealed class GitSettings
 
     /// <summary>远程仓库列表，支持多仓库推送。</summary>
     public List<RemoteInfo> Remotes { get; set; } = new();
+
+    /// <summary>是否启用 HTTP 代理（用于 GitHub 等需要代理访问的平台）。</summary>
+    public bool ProxyEnabled { get; set; }
+
+    /// <summary>HTTP 代理端口（默认 7897，仅 ProxyEnabled 为 true 时生效）。</summary>
+    public int ProxyPort { get; set; } = 7897;
 }
 
 /// <summary>按远程 URL 持久化的凭据。</summary>

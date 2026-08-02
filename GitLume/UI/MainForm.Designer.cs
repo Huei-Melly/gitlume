@@ -64,6 +64,10 @@ partial class MainForm
     private SciProgressBar _progress = null!;
     private Label _statusText = null!;
     private Label _lblStatusRight = null!;
+    // ---- 底部代理控件 ----
+    private Label _lblProxyLabel = null!;
+    private TextBox _txtProxyPort = null!;
+    private SciButton _btnProxyToggle = null!;
 
     private void InitializeComponent()
     {
@@ -96,6 +100,9 @@ partial class MainForm
         _progress = new SciProgressBar();
         _statusText = new Label();
         _lblStatusRight = new Label();
+        _lblProxyLabel = new Label();
+        _txtProxyPort = new TextBox();
+        _btnProxyToggle = new SciButton();
         _panelGlobal.SuspendLayout();
         _panelLocal.SuspendLayout();
         _panelRemotes.SuspendLayout();
@@ -463,6 +470,46 @@ partial class MainForm
         _lblStatusRight.TabIndex = 10;
         _lblStatusRight.Text = "GITLUME v1.3";
         // 
+        // _lblProxyLabel
+        // 
+        _lblProxyLabel.Anchor = AnchorStyles.Bottom;
+        _lblProxyLabel.AutoSize = true;
+        _lblProxyLabel.Font = new Font("Microsoft YaHei UI", 9F);
+        _lblProxyLabel.ForeColor = Color.FromArgb(139, 148, 161);
+        _lblProxyLabel.Location = new Point(333, 733);
+        _lblProxyLabel.Name = "_lblProxyLabel";
+        _lblProxyLabel.Size = new Size(56, 17);
+        _lblProxyLabel.TabIndex = 11;
+        _lblProxyLabel.Text = "代理端口";
+        // 
+        // _txtProxyPort
+        // 
+        _txtProxyPort.Anchor = AnchorStyles.Bottom;
+        _txtProxyPort.BackColor = Color.FromArgb(12, 15, 19);
+        _txtProxyPort.BorderStyle = BorderStyle.FixedSingle;
+        _txtProxyPort.Font = new Font("Microsoft YaHei UI", 9F);
+        _txtProxyPort.ForeColor = Color.FromArgb(230, 237, 243);
+        _txtProxyPort.Location = new Point(395, 729);
+        _txtProxyPort.Name = "_txtProxyPort";
+        _txtProxyPort.Size = new Size(72, 23);
+        _txtProxyPort.TabIndex = 12;
+        _txtProxyPort.Text = "7897";
+        _txtProxyPort.TextAlign = HorizontalAlignment.Center;
+        // 
+        // _btnProxyToggle
+        // 
+        _btnProxyToggle.Anchor = AnchorStyles.Bottom;
+        _btnProxyToggle.Accent = false;
+        _btnProxyToggle.Danger = false;
+        _btnProxyToggle.FlatStyle = FlatStyle.Flat;
+        _btnProxyToggle.Font = new Font("Microsoft YaHei UI", 9F);
+        _btnProxyToggle.ForeColor = Color.FromArgb(230, 237, 243);
+        _btnProxyToggle.Location = new Point(477, 724);
+        _btnProxyToggle.Name = "_btnProxyToggle";
+        _btnProxyToggle.Size = new Size(64, 30);
+        _btnProxyToggle.TabIndex = 13;
+        _btnProxyToggle.Text = "关闭";
+        // 
         // MainForm
         // 
         BackColor = Color.FromArgb(15, 18, 23);
@@ -478,6 +525,9 @@ partial class MainForm
         Controls.Add(_progress);
         Controls.Add(_statusText);
         Controls.Add(_lblStatusRight);
+        Controls.Add(_lblProxyLabel);
+        Controls.Add(_txtProxyPort);
+        Controls.Add(_btnProxyToggle);
         DoubleBuffered = true;
         Font = new Font("Microsoft YaHei UI", 9.5F);
         MinimumSize = new Size(860, 700);

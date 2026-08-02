@@ -25,10 +25,16 @@ public partial class MainForm : Form
     private static readonly Font _logLabelFont = Theme.FontLabel(9f);
     private int _logLines;
 
+    // 配置防抖保存：停止输入 500ms 后才写盘，避免每敲一个字符就写一次磁盘
+    private readonly System.Windows.Forms.Timer _saveDebounce = new() { Interval = 500 };
+
     public MainForm()
     {
         InitializeComponent();
         WireEvents();
+
+        // 配置防抖：timer 触发时执行一次保存
+        _saveDebounce.Tick += (_, _) => { _saveDebounce.Stop(); SaveSettings(); };
 
         // 初始按当前窗口宽度校准可伸缩控件（列表宽度 / 备注输入框宽度）
         UpdateRemoteListWidth();
@@ -85,6 +91,19 @@ public partial class MainForm : Form
         _service.StatusChanged += msg => SafeUi(() => _statusText.Text = msg);
         _service.AuthRequired = OnAuthRequired;
         _service.CredentialsAccepted += OnCredentialsAccepted;
+
+        // 代理按钮：点击切换开/关状态，并应用配置
+        _btnProxyToggle.Click += (_, _) =>
+        {
+            bool isOn = _btnProxyToggle.Text == "开启";
+            _btnProxyToggle.Text = isOn ? "关闭" : "开启";
+            _btnProxyToggle.Accent = !isOn;
+            _btnProxyToggle.Invalidate();
+            ApplyProxyConfig();
+            _saveDebounce.Stop();
+            _saveDebounce.Start();
+        };
+        _txtProxyPort.TextChanged += (_, _) => { if (_btnProxyToggle.Text == "开启") ApplyProxyConfig(); _saveDebounce.Stop(); _saveDebounce.Start(); };
     }
 
     /// <summary>启动时把已保存（加密）的凭据解密载入会话：每个远程各用各的账号密码，推送时自动使用、不再弹窗。</summary>
@@ -173,11 +192,32 @@ public partial class MainForm : Form
 
     private void LoadSettingsToUi()
     {
-        // 只恢复必要配置：用户名、邮箱、远程仓库列表；不恢复上次的文件夹路径
+        // 只恢复必要配置：用户名、邮箱、远程仓库列表、代理设置；不恢复上次的文件夹路径
         _txtName.Text = _settings.UserName;
         _txtEmail.Text = _settings.UserEmail;
+        _txtProxyPort.Text = _settings.ProxyPort.ToString();
+        bool proxyOn = _settings.ProxyEnabled;
+        _btnProxyToggle.Text = proxyOn ? "开启" : "关闭";
+        _btnProxyToggle.Accent = proxyOn;
         RefreshRemoteList(_settings.Remotes);
         SetStatusChip(RepoStatus.Unknown);
+        ApplyProxyConfig();
+
+        // 如果 config.json 中邮箱为空，从 git 全局配置读取并自动填充
+        if (string.IsNullOrWhiteSpace(_settings.UserEmail))
+            _ = LoadGlobalEmailAsync();
+    }
+
+    private async Task LoadGlobalEmailAsync()
+    {
+        var email = await _service.GetGlobalConfigAsync("user.email");
+        if (!string.IsNullOrEmpty(email) && string.IsNullOrWhiteSpace(_txtEmail.Text))
+        {
+            _txtEmail.Text = email;
+            _settings.UserEmail = email;
+            _saveDebounce.Stop();
+            _saveDebounce.Start();
+        }
     }
 
     private void SaveSettings()
@@ -185,6 +225,9 @@ public partial class MainForm : Form
         SyncRemotesFromList();
         _settings.UserName = _txtName.Text.Trim();
         _settings.UserEmail = _txtEmail.Text.Trim();
+        _settings.ProxyEnabled = _btnProxyToggle.Text == "开启";
+        if (int.TryParse(_txtProxyPort.Text.Trim(), out var port) && port > 0 && port < 65536)
+            _settings.ProxyPort = port;
         ConfigStore.Save(_settings);
     }
 
@@ -196,7 +239,9 @@ public partial class MainForm : Form
         _settings.UserName = _txtName.Text.Trim();
         _settings.UserEmail = _txtEmail.Text.Trim();
         _service.SetIdentity(_settings.UserName, _settings.UserEmail);
-        SaveSettings();
+        // 防抖保存：停止输入 500ms 后自动写盘
+        _saveDebounce.Stop();
+        _saveDebounce.Start();
     }
 
     /// <summary>离开输入框时自动写入全局 git 配置（~/.gitconfig），以后所有项目不用再输。</summary>
@@ -552,7 +597,7 @@ public partial class MainForm : Form
         }
 
         bool enable = !busy;
-        foreach (var c in new Control[] { _btnBrowse, _btnDetect, _btnAddRemote, _btnEditRemote, _btnDeleteRemote, _btnLoadRemotes, _btnSmartPush, _txtName, _txtEmail, _txtFolder, _txtMessage })
+        foreach (var c in new Control[] { _btnBrowse, _btnDetect, _btnAddRemote, _btnEditRemote, _btnDeleteRemote, _btnLoadRemotes, _btnSmartPush, _txtName, _txtEmail, _txtFolder, _txtMessage, _txtProxyPort, _btnProxyToggle })
             c.Enabled = enable;
 
         Cursor = busy ? Cursors.WaitCursor : Cursors.Default;
@@ -563,8 +608,13 @@ public partial class MainForm : Form
     private void SafeUi(Action action)
     {
         if (IsDisposed) return;
-        if (InvokeRequired) BeginInvoke(action);
-        else action();
+        try
+        {
+            if (InvokeRequired) BeginInvoke(action);
+            else action();
+        }
+        catch (ObjectDisposedException) { /* 窗体已释放，忽略 */ }
+        catch (InvalidOperationException) { /* 句柄尚未创建，忽略 */ }
     }
 
     private void AppendConsoleLine(GitOutputLine line)
@@ -576,18 +626,10 @@ public partial class MainForm : Form
             const int trimLines = 200;
             if (_logLines >= maxLines)
             {
-                int start = 0, found = 0;
-                for (int i = 0; i < _console.TextLength && found < trimLines; i++)
+                var firstChar = _console.GetFirstCharIndexFromLine(trimLines);
+                if (firstChar > 0)
                 {
-                    if (_console.Text[i] == '\n')
-                    {
-                        found++;
-                        start = i + 1;
-                    }
-                }
-                if (start > 0)
-                {
-                    _console.Select(0, start);
+                    _console.Select(0, firstChar);
                     _console.SelectedText = "";
                     _logLines -= trimLines;
                 }
@@ -614,12 +656,28 @@ public partial class MainForm : Form
     private void ShowWarn(string msg) =>
         MessageBox.Show(this, msg, "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
 
+    /// <summary>根据当前 UI 状态应用或清除代理设置。</summary>
+    private void ApplyProxyConfig()
+    {
+        bool proxyOn = _btnProxyToggle.Text == "开启";
+        if (proxyOn && int.TryParse(_txtProxyPort.Text.Trim(), out var port) && port > 0 && port < 65536)
+        {
+            _service.EnableProxy("127.0.0.1", port);
+        }
+        else
+        {
+            _service.DisableProxy();
+        }
+    }
+
     private void OnFormClosing(object? sender, FormClosingEventArgs e)
     {
         _progress.StopFlow();   // 停止进度条动画计时器，避免退出后仍在空转
         _service.Shutdown();    // 终止可能仍在执行的 git 进程，不留孤儿进程
         _service.ClearCredentials();
-        SaveSettings();
+        _saveDebounce.Stop();   // 停止防抖，直接写盘
+        // 直接保存内存中的设置，避免读取已释放的控件
+        ConfigStore.Save(_settings);
     }
 
     // ---------- 背景 ----------

@@ -53,6 +53,12 @@ public sealed class GitService
         _userEmail = email;
     }
 
+    /// <summary>启用 HTTP 代理（用于 GitHub 等需要代理访问的平台）。</summary>
+    public void EnableProxy(string host, int port) => _runner.SetProxy(host, port);
+
+    /// <summary>禁用 HTTP 代理。</summary>
+    public void DisableProxy() => _runner.ClearProxy();
+
     // ==================== 基础执行 ====================
 
     private async Task<GitResult> RunAsync(string folder, bool addIdentity, params string[] args)
@@ -183,6 +189,14 @@ public sealed class GitService
             return r1;
         }
         return new GitResult { ExitCode = 1, Output = r1.Output + r2.Output };
+    }
+
+    /// <summary>读取全局 Git 配置值（如 user.name / user.email）。</summary>
+    public async Task<string?> GetGlobalConfigAsync(string key)
+    {
+        var r = await RunAsync("", false, "config", "--global", key);
+        var val = r.Output?.Trim();
+        return r.Success && !string.IsNullOrEmpty(val) ? val : null;
     }
 
     // ==================== 分支与远程 ====================
@@ -440,14 +454,24 @@ public sealed class GitService
         var pull = await PullWithAuthAsync(folder, remotes[0], branch, autoResolveConflicts: isFirstCommit);
         if (pull == PullOutcome.Failed) return false;
 
+        var allOk = true;
         foreach (var remote in remotes)
         {
             if (!await PushWithAuthAsync(folder, remote, branch, setUpstream: isFirstCommit))
-                return false;
+            {
+                allOk = false;
+                // 继续推送其他仓库，避免一个失败阻塞全部
+                continue;
+            }
+            // 首个推送上行成功后标记后续不再需要 -u
+            isFirstCommit = false;
         }
 
-        Success("✔ 全部操作完成。");
-        return true;
+        if (allOk)
+            Success("✔ 全部仓库推送完成。");
+        else
+            Warn("⚠ 部分仓库推送失败，请检查日志。");
+        return allOk;
     }
 
     /// <summary>仅本地提交（不推送）。</summary>

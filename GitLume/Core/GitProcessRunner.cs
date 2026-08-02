@@ -52,6 +52,21 @@ public sealed class GitProcessRunner
 
     public void SetEnv(string key, string value) => _env[key] = value;
 
+    /// <summary>设置 HTTP 代理（用于 GitHub 等需要代理访问的平台）。</summary>
+    public void SetProxy(string host, int port)
+    {
+        var proxy = $"http://{host}:{port}";
+        _env["HTTP_PROXY"] = proxy;
+        _env["HTTPS_PROXY"] = proxy;
+    }
+
+    /// <summary>清除 HTTP 代理设置。</summary>
+    public void ClearProxy()
+    {
+        _env.Remove("HTTP_PROXY");
+        _env.Remove("HTTPS_PROXY");
+    }
+
     /// <summary>当前正在执行的 git 进程（应用退出时用于强制终止，避免留下孤儿进程）。</summary>
     private Process? _current;
 
@@ -64,6 +79,9 @@ public sealed class GitProcessRunner
             try { p.Kill(true); } catch { /* 进程已结束则忽略 */ }
         }
     }
+
+    /// <summary>Git 命令默认超时时间（秒），超过此时间未完成则强制终止，避免网络卡死永久挂起。</summary>
+    private const int DefaultTimeoutSeconds = 120;
 
     /// <summary>在指定工作目录执行一条 git 命令，返回退出码与输出。</summary>
     public async Task<GitResult> RunAsync(string workingDir, params string[] args)
@@ -132,6 +150,19 @@ public sealed class GitProcessRunner
         _current = proc;
         try
         {
+            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(DefaultTimeoutSeconds));
+            var completedTask = await Task.WhenAny(tcs.Task, timeoutTask);
+
+            if (completedTask == timeoutTask)
+            {
+                try { proc.Kill(true); } catch { /* 强制终止超时进程 */ }
+                return new GitResult
+                {
+                    ExitCode = -1,
+                    Output = $"git 命令执行超时（{DefaultTimeoutSeconds} 秒），已强制终止。\n命令：git {string.Join(" ", args)}",
+                };
+            }
+
             int exitCode = await tcs.Task;
             return new GitResult
             {

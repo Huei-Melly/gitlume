@@ -164,7 +164,8 @@ public sealed class SciField : UserControl
             BackColor = Theme.Input,
             ForeColor = Theme.Text,
             Font = Theme.FontLabel(10f),
-            Location = new Point(14, 22),
+            Location = new Point(14, 24),
+            Height = 23,
             Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top,
         };
         _box.GotFocus += (_, _) => Invalidate();
@@ -199,7 +200,7 @@ public sealed class SciField : UserControl
         g.SmoothingMode = SmoothingMode.AntiAlias;
         g.Clear(BackColor);
 
-        // 标签区 4~19，输入框区 22~49，中间留 3px，避免标签与输入框粘连
+        // 标签区 4~19，输入框区 22~49，文字在框内上下居中，留 2px 内边距避免贴边
         using var labelBrush = new SolidBrush(Theme.TextDim);
         g.DrawString(LabelText, _labelFont, labelBrush, 12, 4);
 
@@ -255,5 +256,11 @@ public sealed class SciProgressBar : Control
     {
         _timer.Stop();
         base.OnHandleDestroyed(e);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing) _timer.Dispose();
+        base.Dispose(disposing);
     }
 }

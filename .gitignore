@@ -1,9 +1,40 @@
-# .NET 构建产物
+# ─── .NET 构建产物 ───
 bin/
 obj/
+*.exe
+*.dll
+*.pdb
+*.xml          # 仅 XML 文档注释文件，项目配置文件不在此列
 
-# 运行日志
-*.log
+# ─── 运行时生成的文件 ───
+config.json    # 用户配置（用户名、邮箱、仓库列表、加密密码）
+crash.log      # 程序崩溃日志
+.github/       # GitHub CI 工作流本地副本
 
-# VS 用户配置
+# ─── Visual Studio ───
 .vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+# ─── JetBrains Rider ───
+.idea/
+*.sln.iml
+
+# ─── VS Code ───
+.vscode/
+*.code-workspace
+
+# ─── Windows ───
+Thumbs.db
+*.cab
+*.msi
+*.msm
+*.msp
+
+# ─── 其他 ───
+*.swp
+*.swo
+*~
